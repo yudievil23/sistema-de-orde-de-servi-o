@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Ordens de Serviço</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .status-pending {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .status-progress {
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .status-completed {
+            border-left: 4px solid #10b981;
+        }
+        
+        .status-cancelled {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .checklist-item {
+            transition: all 0.2s ease;
+        }
+        
+        .checklist-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .photo-carousel {
+            position: relative;
+            height: 120px;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        
+        .photo-carousel-inner {
+            display: flex;
+            transition: transform 0.5s ease;
+            height: 100%;
+        }
+        
+        .photo-carousel-item {
+            flex: 0 0 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .photo-carousel-nav {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .photo-carousel-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.5);
+            cursor: pointer;
+        }
+        
+        .photo-carousel-dot.active {
+            background-color: white;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        
+        .financial-summary {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .financial-card {
+            transition: all 0.3s ease;
+        }
+        
+        .financial-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+        
+        .profit-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #10b981;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .order-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .order-table th {
+            position: sticky;
+            top: 0;
+            background-color: #1e293b;
+            z-index: 10;
+        }
+        
+        .order-table tr:nth-child(even) {
+            background-color: #1e293b;
+        }
+        
+        .order-table tr:hover {
+            background-color: #334155;
+        }
+        
+        .order-table td, .order-table th {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .order-table th:first-child {
+            border-top-left-radius: 8px;
+        }
+        
+        .order-table th:last-child {
+            border-top-right-radius: 8px;
+        }
+        
+        .order-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .positive-profit {
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .negative-profit {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printContent, #printContent * {
+                visibility: visible;
+            }
+            #printContent {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+                font-size: 12pt;
+            }
+            .print-photo {
+                max-width: 100px;
+                max-height: 100px;
+                margin: 5px;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        /* Admin panel */
+        .admin-panel {
+            background-color: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        /* Photo carousel controls */
+        .carousel-control {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .carousel-prev {
+            left: 10px;
+        }
+        
+        .carousel-next {
+            right: 10px;
+        }
+        
+        .carousel-play {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold">
+                        <span class="text-amber-500">Tech</span>Repair
+                    </h1>
+                    <p class="text-slate-400">Sistema de gestão de ordens de serviço</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                    <button id="newOrderBtn" class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center justify-center">
+                        <i class="fas fa-plus-circle mr-2"></i> Nova Ordem
+                    </button>
+                    <div class="relative">
+                        <select id="monthFilter" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-4 py-2 appearance-none pr-8 w-full">
+                            <option value="all">Todos os meses</option>
+                            <option value="0">Janeiro</option>
+                            <option value="1">Fevereiro</option>
+                            <option value="2">Março</option>
+                            <option value="3">Abril</option>
+                            <option value="4">Maio</option>
+                            <option value="5">Junho</option>
+                            <option value="6">Julho</option>
+                            <option value="7">Agosto</option>
+                            <option value="8">Setembro</option>
+                            <option value="9">Outubro</option>
+                            <option value="10">Novembro</option>
+                            <option value="11">Dezembro</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Admin Panel -->
+        <section id="adminPanel" class="admin-panel mb-8 hidden">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-cog mr-2 text-amber-500"></i> Painel Administrativo
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-medium mb-3">Configurações de Comissão</h3>
+                    <div class="bg-slate-800 rounded-lg p-4">
+                        <div class="mb-4">
+                            <label for="timeCommissionRate" class="block mb-2">% Comissão Tempo</label>
+                            <div class="relative">
+                                <input type="number" id="timeCommissionRate" min="0" max="100" step="0.1" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <span class="absolute right-3 top-2">%</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-1">Valor padrão para comissão baseada no tempo dedicado ao serviço</p>
+                        </div>
+                        <button id="saveCommissionSettings" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors">
+                            Salvar Configurações
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium mb-3">Configurações do Carrossel</h3>
+                    <div class="bg-slate-800 rounded-lg p-4">
+                        <div class="mb-4">
+                            <label for="carouselSpeed" class="block mb-2">Velocidade do Carrossel (segundos)</label>
+                            <select id="carouselSpeed" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <option value="1000">1 segundo</option>
+                                <option value="2000">2 segundos</option>
+                                <option value="3000" selected>3 segundos</option>
+                                <option value="4000">4 segundos</option>
+                                <option value="5000">5 segundos</option>
+                            </select>
+                        </div>
+                        <button id="saveCarouselSettings" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors">
+                            Salvar Configurações
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Toggle Admin Panel Button -->
+        <button id="toggleAdminPanel" class="fixed bottom-4 right-4 bg-slate-800 hover:bg-slate-700 text-amber-500 p-3 rounded-full shadow-lg z-50">
+            <i class="fas fa-cog text-xl"></i>
+        </button>
+
+        <!-- Active Orders Panel (Only Pending) -->
+        <section class="mb-12">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-tools mr-2 text-amber-500"></i> Ordens Ativas (Pendentes)
+            </h2>
+            <div class="bg-slate-800 rounded-xl p-4 sm:p-6 shadow-lg">
+                <div id="activeOrdersCarousel" class="carousel flex overflow-x-auto space-x-4 sm:space-x-6 pb-4">
+                    <!-- Active orders (pending) will be added here by JavaScript -->
+                    <div class="carousel-item w-72 flex-shrink-0 bg-slate-700 rounded-lg p-4 shadow-md status-pending">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-semibold truncate">Carregando...</h3>
+                            <span class="text-xs bg-amber-500 text-white px-2 py-1 rounded-full">Pendente</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Orders Catalog (All orders except pending) -->
+        <section class="mb-12">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-clipboard-list mr-2 text-amber-500"></i> Catálogo de Ordens
+            </h2>
+            <div class="bg-slate-800 rounded-xl p-4 sm:p-6 shadow-lg">
+                <div class="overflow-x-auto">
+                    <table class="order-table">
+                        <thead>
+                            <tr>
+                                <th>Nº Ordem</th>
+                                <th>Cliente</th>
+                                <th>Modelo</th>
+                                <th>Serviço</th>
+                                <th>Valor Cobrado</th>
+                                <th>Valor Peça</th>
+                                <th>Taxa Entrega</th>
+                                <th>Lucro</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                            <!-- Orders will be populated here by JavaScript -->
+                            <tr>
+                                <td colspan="9" class="text-center py-8 text-slate-400">Carregando ordens...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Financial Summary -->
+        <section class="mb-12">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-chart-line mr-2 text-amber-500"></i> Resumo Financeiro Mensal
+            </h2>
+            <div class="financial-summary p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div class="financial-card bg-slate-800 p-4 rounded-lg relative">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-sm">Total Faturado</p>
+                                <p id="totalBilled" class="text-2xl font-bold">R$ 0,00</p>
+                            </div>
+                            <div class="bg-blue-500 p-3 rounded-lg">
+                                <i class="fas fa-money-bill-wave text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                                        
+                    <div class="financial-card bg-slate-800 p-4 rounded-lg relative">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-sm">Total em Peças</p>
+                                <p id="totalParts" class="text-2xl font-bold">R$ 0,00</p>
+                            </div>
+                            <div class="bg-purple-500 p-3 rounded-lg">
+                                <i class="fas fa-microchip text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                                        
+                    <div class="financial-card bg-slate-800 p-4 rounded-lg relative">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-sm">Total de Taxas</p>
+                                <p id="totalFees" class="text-2xl font-bold">R$ 0,00</p>
+                            </div>
+                            <div class="bg-green-500 p-3 rounded-lg">
+                                <i class="fas fa-truck text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                                        
+                    <div class="financial-card bg-slate-800 p-4 rounded-lg relative">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-sm">Total em Lucro</p>
+                                <p id="totalProfit" class="text-2xl font-bold">R$ 0,00</p>
+                            </div>
+                            <div class="bg-amber-500 p-3 rounded-lg">
+                                <i class="fas fa-coins text-white"></i>
+                            </div>
+                        </div>
+                        <div id="profitBadge" class="profit-badge hidden">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                    </div>
+                                        
+                    <div class="financial-card bg-slate-800 p-4 rounded-lg relative">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-slate-400 text-sm">Comissão Técnico (8%)</p>
+                                <p id="technicianCommission" class="text-2xl font-bold">R$ 0,00</p>
+                            </div>
+                            <div class="bg-red-500 p-3 rounded-lg">
+                                <i class="fas fa-user-tie text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- New Order Modal -->
+        <div id="newOrderModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
+            <div class="bg-slate-800 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl mx-4">
+                <div class="p-4 sm:p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Nova Ordem de Serviço</h2>
+                        <button id="closeModalBtn" class="text-slate-400 hover:text-white">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+                                        
+                    <form id="orderForm" class="space-y-6">
+                        <input type="hidden" id="editOrderId">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                            <div>
+                                <label for="clientName" class="block mb-2">Nome do Cliente</label>
+                                <input type="text" id="clientName" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label for="whatsapp" class="block mb-2">Número do WhatsApp</label>
+                                <input type="tel" id="whatsapp" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                        </div>
+                                                
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+                            <div>
+                                <label for="deviceType" class="block mb-2">Tipo do Aparelho</label>
+                                <select id="deviceType" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <option value="Celular">Celular</option>
+                                    <option value="Tablet">Tablet</option>
+                                    <option value="Computador">Computador</option>
+                                    <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="brand" class="block mb-2">Marca</label>
+                                <input type="text" id="brand" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label for="model" class="block mb-2">Modelo</label>
+                                <input type="text" id="model" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                        </div>
+                                                
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                            <div>
+                                <label for="imei" class="block mb-2">IMEI/Serial</label>
+                                <input type="text" id="imei" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label for="status" class="block mb-2">Status</label>
+                                <select id="status" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <option value="pending">Está pendente</option>
+                                    <option value="progress">Está em andamento</option>
+                                    <option value="completed">Está concluído</option>
+                                    <option value="cancelled">Está cancelado</option>
+                                </select>
+                            </div>
+                        </div>
+                                                
+                        <div>
+                            <label for="clientReport" class="block mb-2">Relato do Cliente</label>
+                            <textarea id="clientReport" rows="3" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+                        </div>
+                                                
+                        <div>
+                            <label for="serviceDescription" class="block mb-2">O que será feito</label>
+                            <textarea id="serviceDescription" rows="3" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+                        </div>
+                                                
+                        <div>
+                            <label for="replacedPart" class="block mb-2">Peça trocada</label>
+                            <input type="text" id="replacedPart" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        </div>
+                                                
+                        <!-- Checklist Section -->
+                        <div class="border-t border-slate-700 pt-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold">Checklist</h3>
+                                <button type="button" id="addChecklistItem" class="text-amber-500 hover:text-amber-400 flex items-center">
+                                    <i class="fas fa-plus-circle mr-1"></i> Adicionar Item
+                                </button>
+                            </div>
+                                                        
+                            <div id="checklistItems" class="space-y-3">
+                                <div class="checklist-item flex items-center">
+                                    <input type="text" placeholder="Saúde da bateria (ex: 83%)" class="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <button type="button" class="delete-checklist-item ml-2 text-red-500 hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="checklist-item flex items-center">
+                                    <input type="text" placeholder="Câmera frontal OK" class="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <button type="button" class="delete-checklist-item ml-2 text-red-500 hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="checklist-item flex items-center">
+                                    <input type="text" placeholder="Câmera traseira OK" class="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <button type="button" class="delete-checklist-item ml-2 text-red-500 hover:text-red-400">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                                                
+                        <!-- Values Section -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 border-t border-slate-700 pt-6">
+                            <div>
+                                <label for="partValue" class="block mb-2">Valor da peça trocada</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2">R$</span>
+                                    <input type="number" id="partValue" step="0.01" class="w-full bg-slate-700 border border-slate-600 rounded-lg pl-8 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="taxValue" class="block mb-2">Valor de taxa</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2">R$</span>
+                                    <input type="number" id="taxValue" step="0.01" class="w-full bg-slate-700 border border-slate-600 rounded-lg pl-8 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="totalValue" class="block mb-2">Valor total</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2">R$</span>
+                                    <input type="number" id="totalValue" step="0.01" class="w-full bg-slate-700 border border-slate-600 rounded-lg pl-8 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                </div>
+                            </div>
+                        </div>
+                                                
+                        <!-- Date Section -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 border-t border-slate-700 pt-6">
+                            <div>
+                                <label for="entryDay" class="block mb-2">Dia</label>
+                                <input type="number" id="entryDay" min="1" max="31" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label for="entryMonth" class="block mb-2">Mês</label>
+                                <select id="entryMonth" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                    <option value="0">Janeiro</option>
+                                    <option value="1">Fevereiro</option>
+                                    <option value="2">Março</option>
+                                    <option value="3">Abril</option>
+                                    <option value="4">Maio</option>
+                                    <option value="5">Junho</option>
+                                    <option value="6">Julho</option>
+                                    <option value="7">Agosto</option>
+                                    <option value="8">Setembro</option>
+                                    <option value="9">Outubro</option>
+                                    <option value="10">Novembro</option>
+                                    <option value="11">Dezembro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="entryYear" class="block mb-2">Ano</label>
+                                <input type="number" id="entryYear" min="2000" max="2100" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                        </div>
+                                                
+                        <!-- Photos Section -->
+                        <div class="border-t border-slate-700 pt-6">
+                            <h3 class="text-lg font-semibold mb-4">Fotos do Aparelho</h3>
+                            <div class="flex flex-wrap gap-4" id="photosPreview">
+                                <!-- Photo previews will appear here -->
+                            </div>
+                            <div class="mt-4">
+                                <label for="photoUpload" class="cursor-pointer inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors">
+                                    <i class="fas fa-camera mr-2"></i> Adicionar Fotos
+                                    <input type="file" id="photoUpload" class="hidden" accept="image/*" multiple>
+                                </label>
+                            </div>
+                        </div>
+                                                
+                        <div class="flex justify-end space-x-4 pt-6 border-t border-slate-700">
+                            <button type="button" id="cancelOrderBtn" class="px-6 py-2 border border-slate-600 rounded-lg hover:bg-slate-700 transition-colors">
+                                Cancelar
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors flex items-center">
+                                <i class="fas fa-save mr-2"></i> Salvar Ordem
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Print Receipt Modal -->
+        <div id="printReceiptModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
+            <div class="bg-slate-800 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl mx-4">
+                <div class="p-4 sm:p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">Imprimir Cupom Fiscal</h2>
+                        <button id="closePrintModalBtn" class="text-slate-400 hover:text-white">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="printContent" class="bg-white text-black p-6">
+                        <div class="text-center mb-4">
+                            <h1 class="text-2xl font-bold mb-2">
+                                <span class="text-amber-600">Tech</span>Repair
+                            </h1>
+                            <p class="text-sm">Ordem de Serviço</p>
+                        </div>
+                        
+                        <div class="border-b border-gray-300 pb-4 mb-4">
+                            <h3 class="font-bold text-lg mb-2">Cliente</h3>
+                            <p id="printClientName" class="text-sm"></p>
+                            <p id="printClientPhone" class="text-sm"></p>
+                        </div>
+                        
+                        <div class="border-b border-gray-300 pb-4 mb-4">
+                            <h3 class="font-bold text-lg mb-2">Dispositivo</h3>
+                            <p id="printDeviceType" class="text-sm"></p>
+                            <p id="printDeviceBrand" class="text-sm"></p>
+                            <p id="printDeviceModel" class="text-sm"></p>
+                            <p id="printDeviceSerial" class="text-sm"></p>
+                        </div>
+                        
+                        <div class="border-b border-gray-300 pb-4 mb-4">
+                            <h3 class="font-bold text-lg mb-2">Serviço</h3>
+                            <p id="printClientReport" class="text-sm mb-2"></p>
+                            <p id="printServiceDescription" class="text-sm mb-2"></p>
+                            <p id="printReplacedPart" class="text-sm"></p>
+                        </div>
+                        
+                        <div class="border-b border-gray-300 pb-4 mb-4">
+                            <h3 class="font-bold text-lg mb-2">Valores</h3>
+                            <div class="flex justify-between">
+                                <span>Valor do serviço:</span>
+                                <span id="printTotalValue"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Valor da peça:</span>
+                                <span id="printPartValue"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Taxa:</span>
+                                <span id="printTaxValue"></span>
+                            </div>
+                            <div class="flex justify-between font-bold">
+                                <span>Total:</span>
+                                <span id="printFinalValue"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="border-b border-gray-300 pb-4 mb-4">
+                            <h3 class="font-bold text-lg mb-2">Data</h3>
+                            <p id="printOrderDate" class="text-sm"></p>
+                        </div>
+                        
+                        <div id="printPhotosContainer" class="mb-4">
+                            <h3 class="font-bold text-lg mb-2">Fotos</h3>
+                            <div class="flex flex-wrap gap-2" id="printPhotos">
+                                <!-- Photos will be added here -->
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-6">
+                            <p class="font-bold text-sm">Obrigado pela preferência!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-4 pt-6">
+                        <button id="cancelPrintBtn" class="px-6 py-2 border border-slate-600 rounded-lg hover:bg-slate-700 transition-colors">
+                            Cancelar
+                        </button>
+                        <button id="printReceiptBtn" class="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors flex items-center">
+                            <i class="fas fa-print mr-2"></i> Imprimir Cupom
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load orders from localStorage or use sample data
+            let orders = JSON.parse(localStorage.getItem('techRepairOrders')) || [
+                {
+                    id: 1,
+                    clientName: "João Silva",
+                    whatsapp: "(11) 98765-4321",
+                    deviceType: "Celular",
+                    brand: "Apple",
+                    model: "iPhone 12",
+                    imei: "123456789012345",
+                    clientReport: "Tela quebrada após queda",
+                    serviceDescription: "Troca de tela LCD",
+                    replacedPart: "Tela LCD original",
+                    status: "pending",
+                    checklist: [
+                        "Saúde da bateria: 85%",
+                        "Câmera frontal OK",
+                        "Face ID OK"
+                    ],
+                    values: {
+                        part: 450.00,
+                        tax: 50.00,
+                        total: 500.00
+                    },
+                    photos: [],
+                    date: new Date(2023, 4, 21) // May 21, 2023
+                },
+                {
+                    id: 2,
+                    clientName: "Maria Oliveira",
+                    whatsapp: "(11) 91234-5678",
+                    deviceType: "Celular",
+                    brand: "Samsung",
+                    model: "Galaxy S21",
+                    imei: "987654321098765",
+                    clientReport: "Não carrega mais",
+                    serviceDescription: "Troca do conector de carga",
+                    replacedPart: "Conector USB-C",
+                    status: "progress",
+                    checklist: [
+                        "Saúde da bateria: 92%",
+                        "Conector de carga OK"
+                    ],
+                    values: {
+                        part: 120.00,
+                        tax: 30.00,
+                        total: 150.00
+                    },
+                    photos: [],
+                    date: new Date(2023, 5, 10) // June 10, 2023
+                },
+                {
+                    id: 3,
+                    clientName: "Carlos Souza",
+                    whatsapp: "(11) 99876-5432",
+                    deviceType: "Tablet",
+                    brand: "Apple",
+                    model: "iPad Pro 11\"",
+                    imei: "567890123456789",
+                    clientReport: "Bateria não dura o dia todo",
+                    serviceDescription: "Troca de bateria",
+                    replacedPart: "Bateria original",
+                    status: "completed",
+                    checklist: [
+                        "Saúde da bateria: 100%",
+                        "Câmera traseira OK"
+                    ],
+                    values: {
+                        part: 380.00,
+                        tax: 70.00,
+                        total: 450.00
+                    },
+                    photos: [],
+                    date: new Date(2023, 4, 5) // May 5, 2023
+                }
+            ];
+
+            // Load settings from localStorage
+            let settings = JSON.parse(localStorage.getItem('techRepairSettings')) || {
+                timeCommissionRate: 8,
+                carouselSpeed: 3000
+            };
+
+            // Save orders to localStorage
+            function saveOrders() {
+                // Convert dates to ISO strings for storage
+                const ordersToSave = orders.map(order => ({
+                    ...order,
+                    date: order.date.toISOString()
+                }));
+                localStorage.setItem('techRepairOrders', JSON.stringify(ordersToSave));
+            }
+
+            // Save settings to localStorage
+            function saveSettings() {
+                localStorage.setItem('techRepairSettings', JSON.stringify(settings));
+            }
+
+            // Load orders from localStorage
+            function loadOrders() {
+                const savedOrders = localStorage.getItem('techRepairOrders');
+                if (savedOrders) {
+                    orders = JSON.parse(savedOrders).map(order => ({
+                        ...order,
+                        date: new Date(order.date)
+                    }));
+                }
+            }
+
+            // Load settings from localStorage
+            function loadSettings() {
+                const savedSettings = localStorage.getItem('techRepairSettings');
+                if (savedSettings) {
+                    settings = JSON.parse(savedSettings);
+                    // Update form fields
+                    document.getElementById('timeCommissionRate').value = settings.timeCommissionRate;
+                    document.getElementById('carouselSpeed').value = settings.carouselSpeed;
+                }
+            }
+
+            // DOM Elements
+            const newOrderBtn = document.getElementById('newOrderBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const cancelOrderBtn = document.getElementById('cancelOrderBtn');
+            const newOrderModal = document.getElementById('newOrderModal');
+            const orderForm = document.getElementById('orderForm');
+            const monthFilter = document.getElementById('monthFilter');
+            const activeOrdersCarousel = document.getElementById('activeOrdersCarousel');
+            const ordersTableBody = document.getElementById('ordersTableBody');
+            const addChecklistItem = document.getElementById('addChecklistItem');
+            const checklistItems = document.getElementById('checklistItems');
+            const photoUpload = document.getElementById('photoUpload');
+            const photosPreview = document.getElementById('photosPreview');
+            const entryDay = document.getElementById('entryDay');
+            const entryMonth = document.getElementById('entryMonth');
+            const entryYear = document.getElementById('entryYear');
+            const editOrderId = document.getElementById('editOrderId');
+            const toggleAdminPanel = document.getElementById('toggleAdminPanel');
+            const adminPanel = document.getElementById('adminPanel');
+            const saveCommissionSettings = document.getElementById('saveCommissionSettings');
+            const saveCarouselSettings = document.getElementById('saveCarouselSettings');
+            const timeCommissionRate = document.getElementById('timeCommissionRate');
+            const carouselSpeed = document.getElementById('carouselSpeed');
+            const printReceiptModal = document.getElementById('printReceiptModal');
+            const closePrintModalBtn = document.getElementById('closePrintModalBtn');
+            const cancelPrintBtn = document.getElementById('cancelPrintBtn');
+            const printReceiptBtn = document.getElementById('printReceiptBtn');
+            const printContent = document.getElementById('printContent');
+            
+            // Financial summary elements
+            const totalBilled = document.getElementById('totalBilled');
+            const totalParts = document.getElementById('totalParts');
+            const totalFees = document.getElementById('totalFees');
+            const totalProfit = document.getElementById('totalProfit');
+            const technicianCommission = document.getElementById('technicianCommission');
+            const profitBadge = document.getElementById('profitBadge');
+
+            // Set current date as default
+            const today = new Date();
+            entryDay.value = today.getDate();
+            entryMonth.value = today.getMonth();
+            entryYear.value = today.getFullYear();
+
+            // Modal control
+            newOrderBtn.addEventListener('click', () => {
+                editOrderId.value = '';
+                newOrderModal.classList.remove('hidden');
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                newOrderModal.classList.add('hidden');
+            });
+
+            cancelOrderBtn.addEventListener('click', () => {
+                newOrderModal.classList.add('hidden');
+            });
+
+            // Toggle admin panel
+            toggleAdminPanel.addEventListener('click', () => {
+                adminPanel.classList.toggle('hidden');
+            });
+
+            // Save commission settings
+            saveCommissionSettings.addEventListener('click', () => {
+                const rate = parseFloat(timeCommissionRate.value);
+                if (!isNaN(rate) && rate >= 0 && rate <= 100) {
+                    settings.timeCommissionRate = rate;
+                    saveSettings();
+                    alert('Configurações de comissão salvas com sucesso!');
+                } else {
+                    alert('Por favor, insira um valor válido entre 0 e 100');
+                }
+            });
+
+            // Save carousel settings
+            saveCarouselSettings.addEventListener('click', () => {
+                const speed = parseInt(carouselSpeed.value);
+                if (!isNaN(speed) && speed >= 1000 && speed <= 5000) {
+                    settings.carouselSpeed = speed;
+                    saveSettings();
+                    alert('Configurações do carrossel salvas com sucesso!');
+                } else {
+                    alert('Por favor, selecione uma velocidade válida');
+                }
+            });
+
+            // Print receipt modal control
+            function openPrintReceiptModal(orderId) {
+                const order = orders.find(o => o.id === orderId);
+                if (!order) return;
+                
+                // Fill print content
+                document.getElementById('printClientName').textContent = `Nome: ${order.clientName}`;
+                document.getElementById('printClientPhone').textContent = `Telefone: ${order.whatsapp}`;
+                document.getElementById('printDeviceType').textContent = `Tipo: ${order.deviceType}`;
+                document.getElementById('printDeviceBrand').textContent = `Marca: ${order.brand}`;
+                document.getElementById('printDeviceModel').textContent = `Modelo: ${order.model}`;
+                document.getElementById('printDeviceSerial').textContent = `Serial/IMEI: ${order.imei}`;
+                document.getElementById('printClientReport').textContent = `Relato do cliente: ${order.clientReport}`;
+                document.getElementById('printServiceDescription').textContent = `Serviço realizado: ${order.serviceDescription}`;
+                document.getElementById('printReplacedPart').textContent = `Peça trocada: ${order.replacedPart}`;
+                document.getElementById('printTotalValue').textContent = `R$ ${order.values.total.toFixed(2)}`;
+                document.getElementById('printPartValue').textContent = `R$ ${order.values.part.toFixed(2)}`;
+                document.getElementById('printTaxValue').textContent = `R$ ${order.values.tax.toFixed(2)}`;
+                document.getElementById('printFinalValue').textContent = `R$ ${order.values.total.toFixed(2)}`;
+                
+                const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                                    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                const orderDate = `${order.date.getDate()} de ${monthNames[order.date.getMonth()]} de ${order.date.getFullYear()}`;
+                document.getElementById('printOrderDate').textContent = orderDate;
+                
+                // Add photos
+                const printPhotos = document.getElementById('printPhotos');
+                printPhotos.innerHTML = '';
+                
+                if (order.photos.length > 0) {
+                    order.photos.forEach(photo => {
+                        const img = document.createElement('img');
+                        img.src = photo;
+                        img.className = 'print-photo';
+                        printPhotos.appendChild(img);
+                    });
+                } else {
+                    document.getElementById('printPhotosContainer').classList.add('hidden');
+                }
+                
+                printReceiptModal.classList.remove('hidden');
+            }
+            
+            closePrintModalBtn.addEventListener('click', () => {
+                printReceiptModal.classList.add('hidden');
+            });
+            
+            cancelPrintBtn.addEventListener('click', () => {
+                printReceiptModal.classList.add('hidden');
+            });
+            
+            printReceiptBtn.addEventListener('click', () => {
+                window.print();
+            });
+
+            // Add new checklist item
+            addChecklistItem.addEventListener('click', () => {
+                const newItem = document.createElement('div');
+                newItem.className = 'checklist-item flex items-center fade-in';
+                newItem.innerHTML = `
+                    <input type="text" placeholder="Novo item" class="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <button type="button" class="delete-checklist-item ml-2 text-red-500 hover:text-red-400">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                checklistItems.appendChild(newItem);
+
+                // Add event to delete button
+                newItem.querySelector('.delete-checklist-item').addEventListener('click', () => {
+                    newItem.remove();
+                });
+            });
+
+            // Photo upload preview
+            photoUpload.addEventListener('change', function(e) {
+                photosPreview.innerHTML = '';
+
+                for (let i = 0; i < e.target.files.length; i++) {
+                    const file = e.target.files[i];
+                    const reader = new FileReader();
+
+                    reader.onload = function(event) {
+                        const photoPreview = document.createElement('div');
+                        photoPreview.className = 'relative w-24 h-24 rounded-lg overflow-hidden';
+                        photoPreview.innerHTML = `
+                            <img src="${event.target.result}" class="w-full h-full object-cover">
+                            <button type="button" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        photosPreview.appendChild(photoPreview);
+
+                        // Add event to delete photo button
+                        photoPreview.querySelector('button').addEventListener('click', () => {
+                            photoPreview.remove();
+                        });
+                    };
+
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Form submission
+            orderForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Get form values
+                const day = parseInt(entryDay.value) || today.getDate();
+                const month = parseInt(entryMonth.value) || today.getMonth();
+                const year = parseInt(entryYear.value) || today.getFullYear();
+                const status = document.getElementById('status').value;
+
+                const orderData = {
+                    id: orders.length > 0 ? Math.max(...orders.map(o => o.id)) + 1 : 1,
+                    clientName: document.getElementById('clientName').value,
+                    whatsapp: document.getElementById('whatsapp').value,
+                    deviceType: document.getElementById('deviceType').value,
+                    brand: document.getElementById('brand').value,
+                    model: document.getElementById('model').value,
+                    imei: document.getElementById('imei').value,
+                    clientReport: document.getElementById('clientReport').value,
+                    serviceDescription: document.getElementById('serviceDescription').value,
+                    replacedPart: document.getElementById('replacedPart').value,
+                    status: status,
+                    checklist: Array.from(checklistItems.querySelectorAll('input')).map(input => input.value),
+                    values: {
+                        part: parseFloat(document.getElementById('partValue').value) || 0,
+                        tax: parseFloat(document.getElementById('taxValue').value) || 0,
+                        total: parseFloat(document.getElementById('totalValue').value) || 0
+                    },
+                    photos: [], // In a real app, you would upload these to a server
+                    date: new Date(year, month, day)
+                };
+
+                // Add uploaded photos (in a real app, these would be uploaded to a server)
+                const photoPreviews = photosPreview.querySelectorAll('img');
+                photoPreviews.forEach(img => {
+                    orderData.photos.push(img.src); // Just using the preview URL for demo
+                });
+
+                // Check if we're editing an existing order
+                if (editOrderId.value) {
+                    // Update existing order
+                    const orderIndex = orders.findIndex(o => o.id == editOrderId.value);
+                    if (orderIndex !== -1) {
+                        orders[orderIndex] = {
+                            ...orders[orderIndex],
+                            ...orderData,
+                            id: orders[orderIndex].id // Preserve the original ID
+                        };
+                    }
+                } else {
+                    // Add new order
+                    orders.push(orderData);
+                }
+
+                // Save to localStorage
+                saveOrders();
+
+                // Update UI
+                renderOrders();
+
+                // Close modal and reset form
+                newOrderModal.classList.add('hidden');
+                orderForm.reset();
+                checklistItems.innerHTML = '';
+                photosPreview.innerHTML = '';
+                editOrderId.value = '';
+
+                // Reset date to current
+                entryDay.value = today.getDate();
+                entryMonth.value = today.getMonth();
+                entryYear.value = today.getFullYear();
+
+                // Show success message
+                alert('Ordem salva com sucesso!');
+            });
+
+            // Filter by month
+            monthFilter.addEventListener('change', function() {
+                renderOrders();
+            });
+
+            // Calculate financial summary
+            function calculateFinancialSummary(filteredOrders) {
+                const completedOrders = filteredOrders.filter(order => order.status === 'completed');
+                                
+                const billed = completedOrders.reduce((sum, order) => sum + (order.values.total || 0), 0);
+                const parts = completedOrders.reduce((sum, order) => sum + (order.values.part || 0), 0);
+                const fees = completedOrders.reduce((sum, order) => sum + (order.values.tax || 0), 0);
+                const profit = billed - (parts + fees);
+                const commission = profit * (settings.timeCommissionRate / 100);
+                                
+                return {
+                    billed,
+                    parts,
+                    fees,
+                    profit,
+                    commission
+                };
+            }
+
+            // Update financial summary display
+            function updateFinancialSummary(filteredOrders) {
+                const { billed, parts, fees, profit, commission } = calculateFinancialSummary(filteredOrders);
+                                
+                totalBilled.textContent = `R$ ${billed.toFixed(2)}`;
+                totalParts.textContent = `R$ ${parts.toFixed(2)}`;
+                totalFees.textContent = `R$ ${fees.toFixed(2)}`;
+                totalProfit.textContent = `R$ ${profit.toFixed(2)}`;
+                technicianCommission.textContent = `R$ ${commission.toFixed(2)}`;
+                                
+                // Show/hide profit badge
+                if (profit > 0) {
+                    profitBadge.classList.remove('hidden');
+                    profitBadge.innerHTML = '<i class="fas fa-arrow-up"></i>';
+                    profitBadge.style.backgroundColor = '#10b981';
+                } else if (profit < 0) {
+                    profitBadge.classList.remove('hidden');
+                    profitBadge.innerHTML = '<i class="fas fa-arrow-down"></i>';
+                    profitBadge.style.backgroundColor = '#ef4444';
+                } else {
+                    profitBadge.classList.add('hidden');
+                }
+            }
+
+            // Render orders in carousels and table
+            function renderOrders() {
+                // Clear carousels and table
+                activeOrdersCarousel.innerHTML = '';
+                ordersTableBody.innerHTML = '';
+
+                // Filter orders by month if needed
+                const selectedMonth = monthFilter.value;
+                let filteredOrders = [...orders];
+
+                if (selectedMonth !== 'all') {
+                    filteredOrders = orders.filter(order => order.date.getMonth() == selectedMonth);
+                }
+
+                // Update financial summary
+                updateFinancialSummary(filteredOrders);
+
+                // Separate active orders (only pending)
+                const activeOrders = filteredOrders.filter(order => order.status === 'pending');
+
+                // Render active orders (only pending)
+                activeOrders.forEach(order => {
+                    const orderCard = createOrderCard(order);
+                    activeOrdersCarousel.appendChild(orderCard);
+                });
+
+                // Render all orders in table
+                filteredOrders.forEach(order => {
+                    const profit = order.values.total - (order.values.part + order.values.tax);
+                    const profitClass = profit >= 0 ? 'positive-profit' : 'negative-profit';
+                                        
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-700';
+                    row.innerHTML = `
+                        <td>${order.id}</td>
+                        <td>${order.clientName}</td>
+                        <td>${order.brand} ${order.model}</td>
+                        <td>${order.serviceDescription}</td>
+                        <td>R$ ${order.values.total.toFixed(2)}</td>
+                        <td>R$ ${order.values.part.toFixed(2)}</td>
+                        <td>R$ ${order.values.tax.toFixed(2)}</td>
+                        <td class="${profitClass}">R$ ${profit.toFixed(2)}</td>
+                        <td class="flex space-x-2">
+                            <button class="edit-order text-blue-400 hover:text-blue-300" data-id="${order.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="delete-order text-red-400 hover:text-red-300" data-id="${order.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="print-order text-green-400 hover:text-green-300" data-id="${order.id}">
+                                <i class="fas fa-print"></i>
+                            </button>
+                        </td>
+                    `;
+                    ordersTableBody.appendChild(row);
+
+                    // Add event listeners to edit and delete buttons
+                    row.querySelector('.edit-order').addEventListener('click', () => editOrder(order.id));
+                    row.querySelector('.delete-order').addEventListener('click', () => deleteOrder(order.id));
+                    row.querySelector('.print-order').addEventListener('click', () => openPrintReceiptModal(order.id));
+                });
+
+                // If no orders, show empty message
+                if (filteredOrders.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td colspan="9" class="text-center py-8 text-slate-400">
+                            Nenhuma ordem encontrada para o filtro selecionado
+                        </td>
+                    `;
+                    ordersTableBody.appendChild(row);
+                }
+
+                // Start photo carousels
+                startPhotoCarousels();
+            }
+
+            // Create order card element
+            function createOrderCard(order) {
+                const statusClass = {
+                    'pending': 'status-pending',
+                    'progress': 'status-progress',
+                    'completed': 'status-completed',
+                    'cancelled': 'status-cancelled'
+                }[order.status];
+
+                const statusText = {
+                    'pending': 'Pendente',
+                    'progress': 'Em Andamento',
+                    'completed': 'Concluído',
+                    'cancelled': 'Cancelado'
+                }[order.status];
+
+                const statusColor = {
+                    'pending': 'bg-amber-500',
+                    'progress': 'bg-blue-500',
+                    'completed': 'bg-green-500',
+                    'cancelled': 'bg-red-500'
+                }[order.status];
+
+                const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+                                    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                const orderMonth = monthNames[order.date.getMonth()];
+                const orderDay = order.date.getDate();
+                const orderYear = order.date.getFullYear();
+
+                const orderCard = document.createElement('div');
+                orderCard.className = `carousel-item w-72 flex-shrink-0 ${statusClass} bg-slate-700 rounded-lg p-4 shadow-md`;
+                orderCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-semibold truncate">${order.clientName}</h3>
+                        <span class="text-xs ${statusColor} text-white px-2 py-1 rounded-full">${statusText}</span>
+                    </div>
+                    <p class="text-sm text-slate-400 mb-1">${order.deviceType} ${order.brand} ${order.model}</p>
+                    <p class="text-xs text-slate-500 mb-3">${orderDay} de ${orderMonth} ${orderYear}</p>
+                                                        
+                    ${order.photos.length > 0 ? `
+                    <div class="photo-carousel mb-3">
+                        <div class="photo-carousel-inner">
+                            ${order.photos.map(photo => `
+                                <div class="photo-carousel-item" style="background-image: url('${photo}')"></div>
+                            `).join('')}
+                        </div>
+                        <div class="photo-carousel-nav">
+                            ${order.photos.map((_, index) => `
+                                <div class="photo-carousel-dot ${index === 0 ? 'active' : ''}" data-index="${index}"></div>
+                            `).join('')}
+                        </div>
+                        <button class="carousel-prev"><i class="fas fa-chevron-left"></i></button>
+                        <button class="carousel-next"><i class="fas fa-chevron-right"></i></button>
+                        <button class="carousel-play"><i class="fas fa-play"></i></button>
+                    </div>
+                    ` : '<div class="h-24 bg-slate-600 rounded-lg mb-3 flex items-center justify-center text-slate-400"><i class="fas fa-camera fa-2x"></i></div>'}
+
+                    <div class="text-sm mb-2">
+                        <span class="font-medium">Serviço:</span> ${order.serviceDescription}
+                    </div>
+                    <div class="text-sm mb-3">
+                        <span class="font-medium">Peça:</span> ${order.replacedPart}
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-amber-500">R$ ${order.values.total.toFixed(2)}</span>
+                        <div class="flex space-x-2">
+                            <button class="edit-order text-blue-400 hover:text-blue-300" data-id="${order.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="delete-order text-red-400 hover:text-red-300" data-id="${order.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="print-order text-green-400 hover:text-green-300" data-id="${order.id}">
+                                <i class="fas fa-print"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                // Add edit and delete event listeners
+                orderCard.querySelector('.edit-order')?.addEventListener('click', () => editOrder(order.id));
+                orderCard.querySelector('.delete-order')?.addEventListener('click', () => deleteOrder(order.id));
+                orderCard.querySelector('.print-order')?.addEventListener('click', () => openPrintReceiptModal(order.id));
+
+                return orderCard;
+            }
+
+            // Start auto-scrolling for all photo carousels
+            function startPhotoCarousels() {
+                document.querySelectorAll('.photo-carousel').forEach(carousel => {
+                    const inner = carousel.querySelector('.photo-carousel-inner');
+                    const items = carousel.querySelectorAll('.photo-carousel-item');
+                    const dots = carousel.querySelectorAll('.photo-carousel-dot');
+                    const prevBtn = carousel.querySelector('.carousel-prev');
+                    const nextBtn = carousel.querySelector('.carousel-next');
+                    const playBtn = carousel.querySelector('.carousel-play');
+
+                    if (items.length <= 1) {
+                        // Hide controls if only one item
+                        prevBtn?.classList.add('hidden');
+                        nextBtn?.classList.add('hidden');
+                        playBtn?.classList.add('hidden');
+                        return;
+                    }
+
+                    let currentIndex = 0;
+                    const itemCount = items.length;
+                    let intervalId = null;
+                    let isPlaying = true;
+
+                    // Set initial position
+                    inner.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+                    // Start auto-scroll
+                    function startAutoScroll() {
+                        if (intervalId) clearInterval(intervalId);
+                        intervalId = setInterval(() => {
+                            if (isPlaying) {
+                                currentIndex = (currentIndex + 1) % itemCount;
+                                updateCarousel();
+                            }
+                        }, settings.carouselSpeed);
+                    }
+
+                    // Update carousel position and dots
+                    function updateCarousel() {
+                        inner.style.transform = `translateX(-${currentIndex * 100}%)`;
+                        
+                        // Update dots
+                        dots.forEach((dot, index) => {
+                            dot.classList.toggle('active', index === currentIndex);
+                        });
+                    }
+
+                    // Play/pause functionality
+                    function togglePlayPause() {
+                        isPlaying = !isPlaying;
+                        if (isPlaying) {
+                            playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                            startAutoScroll();
+                        } else {
+                            playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                            clearInterval(intervalId);
+                        }
+                    }
+
+                    // Navigation controls
+                    prevBtn?.addEventListener('click', () => {
+                        currentIndex = (currentIndex - 1 + itemCount) % itemCount;
+                        updateCarousel();
+                        if (!isPlaying) {
+                            clearInterval(intervalId);
+                        }
+                    });
+
+                    nextBtn?.addEventListener('click', () => {
+                        currentIndex = (currentIndex + 1) % itemCount;
+                        updateCarousel();
+                        if (!isPlaying) {
+                            clearInterval(intervalId);
+                        }
+                    });
+
+                    playBtn?.addEventListener('click', togglePlayPause);
+
+                    // Dot navigation
+                    dots.forEach(dot => {
+                        dot.addEventListener('click', () => {
+                            currentIndex = parseInt(dot.dataset.index);
+                            updateCarousel();
+                            if (!isPlaying) {
+                                clearInterval(intervalId);
+                            }
+                        });
+                    });
+
+                    // Start auto-scroll
+                    startAutoScroll();
+
+                    // Pause on hover
+                    carousel.addEventListener('mouseenter', () => {
+                        if (isPlaying) {
+                            clearInterval(intervalId);
+                        }
+                    });
+
+                    // Resume when mouse leaves
+                    carousel.addEventListener('mouseleave', () => {
+                        if (isPlaying) {
+                            startAutoScroll();
+                        }
+                    });
+                });
+            }
+
+            // Edit order
+            function editOrder(id) {
+                const order = orders.find(o => o.id === id);
+                if (!order) return;
+
+                // Set edit mode
+                editOrderId.value = order.id;
+
+                // Fill form with order data
+                document.getElementById('clientName').value = order.clientName;
+                document.getElementById('whatsapp').value = order.whatsapp;
+                document.getElementById('deviceType').value = order.deviceType;
+                document.getElementById('brand').value = order.brand;
+                document.getElementById('model').value = order.model;
+                document.getElementById('imei').value = order.imei;
+                document.getElementById('clientReport').value = order.clientReport;
+                document.getElementById('serviceDescription').value = order.serviceDescription;
+                document.getElementById('replacedPart').value = order.replacedPart;
+                document.getElementById('status').value = order.status;
+
+                // Fill values
+                document.getElementById('partValue').value = order.values.part;
+                document.getElementById('taxValue').value = order.values.tax;
+                document.getElementById('totalValue').value = order.values.total;
+
+                // Fill date
+                entryDay.value = order.date.getDate();
+                entryMonth.value = order.date.getMonth();
+                entryYear.value = order.date.getFullYear();
+
+                // Fill checklist
+                checklistItems.innerHTML = '';
+                order.checklist.forEach(item => {
+                    const newItem = document.createElement('div');
+                    newItem.className = 'checklist-item flex items-center fade-in';
+                    newItem.innerHTML = `
+                        <input type="text" value="${item}" class="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <button type="button" class="delete-checklist-item ml-2 text-red-500 hover:text-red-400">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                    checklistItems.appendChild(newItem);
+
+                    // Add event to delete button
+                    newItem.querySelector('.delete-checklist-item').addEventListener('click', () => {
+                        newItem.remove();
+                    });
+                });
+
+                // Fill photos (in a real app, you would need to handle file uploads differently)
+                photosPreview.innerHTML = '';
+                order.photos.forEach(photo => {
+                    const photoPreview = document.createElement('div');
+                    photoPreview.className = 'relative w-24 h-24 rounded-lg overflow-hidden';
+                    photoPreview.innerHTML = `
+                        <img src="${photo}" class="w-full h-full object-cover">
+                        <button type="button" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    photosPreview.appendChild(photoPreview);
+
+                    // Add event to delete photo button
+                    photoPreview.querySelector('button').addEventListener('click', () => {
+                        photoPreview.remove();
+                    });
+                });
+
+                // Open modal
+                newOrderModal.classList.remove('hidden');
+            }
+
+            // Delete order
+            function deleteOrder(id) {
+                if (confirm('Tem certeza que deseja excluir esta ordem?')) {
+                    orders = orders.filter(order => order.id !== id);
+                    saveOrders();
+                    renderOrders();
+                }
+            }
+
+            // Initial render
+            loadOrders();
+            loadSettings();
+            renderOrders();
+        });
+    </script>
+</body>
+</html>
